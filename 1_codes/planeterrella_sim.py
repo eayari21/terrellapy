@@ -316,7 +316,12 @@ def main():
     p.add_argument("--tmax",type=float,default=2e-6)
     p.add_argument("--store_stride",type=int,default=10)
     p.add_argument("--optimize",action="store_true")
-    p.add_argument("--plottraj",action="store_true")
+    p.add_argument(
+        "--plottraj",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable trajectory plotting (default: on). Use --no-plottraj to disable."
+    )
     args=p.parse_args()
 
     cfg=SimConfig(
