@@ -3,21 +3,20 @@
 Planeterrella simulation (SI units)
 Dipole + optional sphere E field
 Boris pusher integration
-Python + Numba parallel optimize path
-Equatorial (green-like) launches enforced
+Numba optimized path
+Robust sphere-crossing termination
 """
 
 from __future__ import annotations
 import argparse
+import csv
 import math
 from dataclasses import dataclass
 from typing import Tuple
 import numpy as np
 
-# For 3D sphere rotations:
 import matplotlib
-matplotlib.use("QtAgg")   # best option
-# matplotlib.use("TkAgg") # fallback if Qt not installed
+matplotlib.use("MacOSX")
 
 # ==========================================================
 # OPTIONAL NUMBA
@@ -52,6 +51,7 @@ class SimConfig:
     M_vec: Tuple[float, float, float]
     seed: int
     store_stride: int
+    launch_energy_ev: float
 
 # ==========================================================
 # FIELDS
@@ -74,12 +74,13 @@ def B_dipole(r, M_vec):
     return coef*(3*mdotr*rhat - M)
 
 # ==========================================================
-# BORIS (PYTHON)
+# BORIS
 # ==========================================================
 
 def boris_step(r, v, dt, cfg):
     E = E_field(r, cfg.V0, cfg.R_sphere)
     B = B_dipole(r, cfg.M_vec)
+
     qmdt2 = (QE/ME)*dt*0.5
 
     v_minus = v + qmdt2*E
@@ -92,63 +93,71 @@ def boris_step(r, v, dt, cfg):
 
     v_new = v_plus + qmdt2*E
     r_new = r + v_new*dt
+
     return r_new, v_new
 
 # ==========================================================
 # PYTHON SIMULATION
 # ==========================================================
 
-def simulate_python(cfg,nparticles):
+def simulate_python(cfg, nparticles):
 
     rng = np.random.default_rng(cfg.seed)
     nsteps = int(cfg.tmax/cfg.dt)
-    v0 = math.sqrt(2*12.0*EV/ME)
+    v0 = math.sqrt(2*cfg.launch_energy_ev*EV/ME)
 
-    trajectories=[]
+    trajectories = []
 
-    for i in range(nparticles):
+    for _ in range(nparticles):
 
         theta = 2*math.pi*rng.random()
 
-        # Equatorial launches (green-like)
         while True:
             z0 = 2*rng.random()-1
-            if abs(z0) < 0.4:
+            if abs(z0) < 0.5:
                 break
 
         rxy = math.sqrt(1-z0*z0)
 
-        r=np.array([
-            cfg.R_sphere*1.05*rxy*math.cos(theta),
-            cfg.R_sphere*1.05*rxy*math.sin(theta),
-            cfg.R_sphere*1.05*z0
+        r = np.array([
+            cfg.R_sphere*2.0*rxy*math.cos(theta),
+            cfg.R_sphere*2.0*rxy*math.sin(theta),
+            cfg.R_sphere*1.2*z0
         ])
 
         while True:
-            dirv=rng.normal(size=3)
-            dirv/=np.linalg.norm(dirv)
-            if np.dot(dirv,r)>0:
+            dirv = rng.normal(size=3)
+            dirv /= np.linalg.norm(dirv)
+            if np.dot(dirv,r) > 0:
                 break
 
-        v=v0*dirv
-        pts=[]
+        v = v0*dirv
+        pts = []
 
         for step in range(nsteps):
 
-            if step%cfg.store_stride==0:
+            if step % cfg.store_stride == 0:
                 pts.append(r.copy())
 
-            if np.linalg.norm(r)<cfg.R_sphere: break
-            if math.hypot(r[0],r[1])>cfg.r_jar: break
+            r_prev = r.copy()
+            r, v = boris_step(r, v, cfg.dt, cfg)
 
-            r,v=boris_step(r,v,cfg.dt,cfg)
+            # Robust sphere crossing
+            if (np.linalg.norm(r_prev) >= cfg.R_sphere and
+                np.linalg.norm(r) < cfg.R_sphere):
+                pts.append(r.copy())
+                break
+
+            # Jar wall
+            if math.hypot(r[0],r[1]) > cfg.r_jar:
+                break
 
         trajectories.append(np.array(pts))
 
     return trajectories
 
 # ==========================================================
-# NUMBA OPTIMIZED PATH
+# NUMBA PATH
 # ==========================================================
 
 if NUMBA_OK:
@@ -196,27 +205,28 @@ if NUMBA_OK:
     @nb.njit(parallel=True)
     def simulate_many_nb(
         nparticles,nsteps,store_stride,dt,V0,R_sphere,r_jar,
-        Mx,My,Mz
+        Mx,My,Mz,launch_energy_ev
     ):
 
         nstore = (nsteps+store_stride-1)//store_stride
         out = np.empty((nparticles,nstore,3))
-        v0 = math.sqrt(2*12.0*EV/ME)
+        v0 = math.sqrt(2*launch_energy_ev*EV/ME)
 
         for i in nb.prange(nparticles):
 
             theta = 2*math.pi*np.random.random()
 
+            z0 = 0.0
             while True:
                 z0 = 2*np.random.random()-1
-                if abs(z0) < 0.4:
+                if abs(z0) < 0.5:
                     break
 
             rxy = math.sqrt(1-z0*z0)
 
-            x = R_sphere*1.05*rxy*math.cos(theta)
-            y = R_sphere*1.05*rxy*math.sin(theta)
-            z = R_sphere*1.05*z0
+            x = R_sphere*2.0*rxy*math.cos(theta)
+            y = R_sphere*2.0*rxy*math.sin(theta)
+            z = R_sphere*1.2*z0
 
             while True:
                 vx = np.random.normal()
@@ -238,69 +248,21 @@ if NUMBA_OK:
                     out[i,j,2]=z
                     j+=1
 
-                if math.sqrt(x*x+y*y+z*z)<R_sphere: break
-                if math.sqrt(x*x+y*y)>r_jar: break
+                r_prev = math.sqrt(x*x+y*y+z*z)
 
                 x,y,z,vx,vy,vz = _boris_nb(
                     x,y,z,vx,vy,vz,dt,V0,R_sphere,Mx,My,Mz
                 )
 
+                r_new = math.sqrt(x*x+y*y+z*z)
+
+                if r_prev >= R_sphere and r_new < R_sphere:
+                    break
+
+                if math.sqrt(x*x+y*y) > r_jar:
+                    break
+
         return out
-
-# ==========================================================
-# PLOTTING
-# ==========================================================
-
-def plot_system_interactive(cfg, trajs):
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    plt.ion()  # interactive mode ON
-
-    fig = plt.figure(figsize=(9, 9))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # ----------------------------
-    # Trajectories
-    # ----------------------------
-    for tr in trajs:
-        ax.plot(tr[:, 0], tr[:, 1], tr[:, 2],
-                color="green", linewidth=1.5)
-
-    # ----------------------------
-    # Sphere
-    # ----------------------------
-    u = np.linspace(0, 2*np.pi, 80)
-    v = np.linspace(0, np.pi, 80)
-
-    xs = cfg.R_sphere * np.outer(np.cos(u), np.sin(v))
-    ys = cfg.R_sphere * np.outer(np.sin(u), np.sin(v))
-    zs = cfg.R_sphere * np.outer(np.ones_like(u), np.cos(v))
-
-    ax.plot_surface(xs, ys, zs,
-                    color="gray",
-                    alpha=0.9,
-                    edgecolor="none")
-
-    lim = cfg.r_jar * 1.1
-    ax.set_xlim(-lim, lim)
-    ax.set_ylim(-lim, lim)
-    ax.set_zlim(-lim, lim)
-    ax.set_box_aspect([1, 1, 1])
-
-    # Clean styling
-    ax.grid(False)
-    ax.tick_params(labelsize=16)
-
-    ax.set_xlabel("X [cm]", fontsize=22, labelpad=20)
-    ax.set_ylabel("Y [cm]", fontsize=22, labelpad=20)
-    ax.set_zlabel("Z [cm]", fontsize=22, labelpad=20)
-
-    ax.xaxis.set_rotate_label(False)
-    ax.yaxis.set_rotate_label(False)
-    ax.zaxis.set_rotate_label(False)
-
-    plt.show()
 
 # ==========================================================
 # MAIN
@@ -309,19 +271,14 @@ def plot_system_interactive(cfg, trajs):
 def main():
 
     p=argparse.ArgumentParser()
-    p.add_argument("--nparticles",type=int,default=10)
-    p.add_argument("--V0",type=float,default=0)
-    p.add_argument("--M",type=float,default=1)
+    p.add_argument("--nparticles",type=int,default=15)
+    p.add_argument("--V0",type=float,default=150)
+    p.add_argument("--M",type=float,default=250)
     p.add_argument("--dt",type=float,default=5e-12)
-    p.add_argument("--tmax",type=float,default=2e-6)
-    p.add_argument("--store_stride",type=int,default=10)
+    p.add_argument("--tmax",type=float,default=1.2e-5)
+    p.add_argument("--store_stride",type=int,default=5)
+    p.add_argument("--energy",type=float,default=20)
     p.add_argument("--optimize",action="store_true")
-    p.add_argument(
-        "--plottraj",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Enable trajectory plotting (default: on). Use --no-plottraj to disable."
-    )
     args=p.parse_args()
 
     cfg=SimConfig(
@@ -332,7 +289,8 @@ def main():
         tmax=args.tmax,
         M_vec=(0,0,args.M),
         seed=7,
-        store_stride=args.store_stride
+        store_stride=args.store_stride,
+        launch_energy_ev=args.energy
     )
 
     if args.optimize and NUMBA_OK:
@@ -340,14 +298,41 @@ def main():
         pos=simulate_many_nb(
             args.nparticles,nsteps,cfg.store_stride,cfg.dt,
             cfg.V0,cfg.R_sphere,cfg.r_jar,
-            cfg.M_vec[0],cfg.M_vec[1],cfg.M_vec[2]
+            cfg.M_vec[0],cfg.M_vec[1],cfg.M_vec[2],
+            cfg.launch_energy_ev
         )
         trajs=[pos[i,:,:] for i in range(args.nparticles)]
     else:
         trajs=simulate_python(cfg,args.nparticles)
 
-    if args.plottraj:
-        plot_system_interactive(cfg,trajs)
+    from matplotlib import pyplot as plt
+    fig = plt.figure(figsize=(9,9))
+    ax = fig.add_subplot(111, projection="3d")
+
+    for tr in trajs:
+        n = len(tr)
+        cutoff = max(2, int(0.1 * n))  # first 10%
+        tr_short = tr[:cutoff]
+
+        ax.plot(tr_short[:,0],
+                tr_short[:,1],
+                tr_short[:,2],
+                color="purple")
+
+    u = np.linspace(0,2*np.pi,80)
+    v = np.linspace(0,np.pi,80)
+    xs = cfg.R_sphere*np.outer(np.cos(u),np.sin(v))
+    ys = cfg.R_sphere*np.outer(np.sin(u),np.sin(v))
+    zs = cfg.R_sphere*np.outer(np.ones_like(u),np.cos(v))
+    ax.plot_surface(xs,ys,zs,color="gray",alpha=0.9,edgecolor="none")
+
+    lim = cfg.r_jar*1.1
+    ax.set_xlim(-lim,lim)
+    ax.set_ylim(-lim,lim)
+    ax.set_zlim(-lim,lim)
+    ax.set_box_aspect([1,1,1])
+
+    plt.show()
 
 if __name__=="__main__":
     main()
