@@ -305,6 +305,32 @@ def main():
     else:
         trajs=simulate_python(cfg,args.nparticles)
 
+    # ======================================================
+    # WRITE LONGEST PLOTTED TRAJECTORY TO CSV
+    # ======================================================
+
+    # Find trajectory with maximum length
+    longest_tr = max(trajs, key=len)
+
+    n = len(longest_tr)
+    cutoff = max(2, int(0.1 * n))  # same slice used in plotting
+    tr_short = longest_tr[:cutoff]
+
+    # Time array consistent with storage cadence
+    t = np.arange(cutoff) * cfg.dt * cfg.store_stride
+
+    with open("traj.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["t", "x", "y", "z"])
+
+        for i in range(cutoff):
+            writer.writerow([
+                t[i],
+                tr_short[i, 0],
+                tr_short[i, 1],
+                tr_short[i, 2],
+            ])
+
     from matplotlib import pyplot as plt
     fig = plt.figure(figsize=(9,9))
     ax = fig.add_subplot(111, projection="3d")
