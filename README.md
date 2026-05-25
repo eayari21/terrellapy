@@ -13,7 +13,7 @@
 
 ---
 
-## Overview
+## 🟨 Overview
 
 This repository contains Python and Fortran code for simulating charged electron trajectories in a Planeterrella-style apparatus, where particles are launched from a biased magnetized sphere and evolved under electromagnetic fields and collisional effects.
 
@@ -26,7 +26,7 @@ The project’s scientific framing matches the IMPACT/LASP Planeterrella context
 
 ---
 
-## Minimal Quick Start (n particles, n steps)
+## 🟨 Minimal Quick Start (n particles, n steps)
 
 ### 1) Environment
 
@@ -61,7 +61,7 @@ This run will:
 
 ---
 
-## User Manual Guide (Structured, High-Readability Summary)
+## 🟨 User Manual Guide (Structured, High-Readability Summary)
 
 The repository includes a full user manual document at:
 
@@ -97,7 +97,7 @@ This section introduces the motion decomposition used to interpret trajectories:
 
 - Gyromotion about local magnetic field lines.
 - Bounce/mirror behavior at strong-field regions.
-- Guiding-center drift motion (especially \\(\mathbf{E}\times\mathbf{B}\\), curvature drift, and gradient drift).
+- Guiding-center drift motion (especially $\mathbf{E}\times\mathbf{B}$, curvature drift, and gradient drift).
 - Pitch angle and mirror-point interpretation.
 
 **How to use it:** Use this section when reading trajectory plots—identify which motion scale dominates each segment.
@@ -106,8 +106,8 @@ This section introduces the motion decomposition used to interpret trajectories:
 
 This section explains low-pressure plasma collision handling:
 
-- Cross section \\(\sigma\\), number density \\(n\\), mean free path \\(\lambda_{mfp} = 1/(\sigma n)\\).
-- Collision frequency scaling \\(\nu_{coll} = \sigma n v\\).
+- Cross section $\sigma$, number density $n$, mean free path $\lambda_{mfp} = 1/(\sigma n)$.
+- Collision frequency scaling $\nu_{coll} = \sigma n v$.
 - Why higher collision rates reduce acceleration time between collisions.
 - Ionization-threshold relevance for photon-producing events.
 
@@ -146,58 +146,58 @@ Typical extension themes include:
 
 ---
 
-## Basic Physics Implemented
+## 🟨 Basic Physics Implemented
 
-## 1) Equation of Motion (Lorentz Force)
+### 1) Equation of Motion (Lorentz Force)
 
 Particle velocity evolves by:
 
-\\[
+$$
 \frac{d\mathbf{v}}{dt} = \frac{q}{m}\left(\mathbf{E} + \mathbf{v}\times\mathbf{B}\right)
-\\]
+$$
 
-and position by \\(d\mathbf{r}/dt = \mathbf{v}\\).
+and position by $d\mathbf{r}/dt = \mathbf{v}$.
 
 In this repository, the fields are modeled as:
 
-- **Dipole-like magnetic field** from magnetic moment \\(\mathbf{M}\\).
+- **Dipole-like magnetic field** from magnetic moment $\mathbf{M}$.
 - **Radial sphere electric field** derived from sphere bias potential.
 
-## 2) Guiding-Center Drift Quantities (Interpretive)
+### 2) Guiding-Center Drift Quantities (Interpretive)
 
 For weak field nonuniformity over a gyro-orbit, useful drifts include:
 
-- \\(\mathbf{E}\times\mathbf{B}\\) drift:
-  \\[
+- $\mathbf{E}\times\mathbf{B}$ drift:
+  $$
   \mathbf{v}_{E\times B}=\frac{\mathbf{E}\times\mathbf{B}}{|\mathbf{B}|^2}
-  \\]
+  $$
 - Curvature and gradient drifts (sign/magnitude depend on charge and parallel/perpendicular energy partitions).
 
 These drifts help explain azimuthal ring-current organization in dipolar geometry.
 
-## 3) Monte Carlo Collision (MCC) Method
+### 3) Monte Carlo Collision (MCC) Method
 
-Per timestep \\(\Delta t\\), a collision probability is tested using:
+Per timestep $\Delta t$, a collision probability is tested using:
 
-\\[
+$$
 P_{coll} = 1 - \exp\left(-n\sigma v\,\Delta t\right)
-\\]
+$$
 
 where:
 
-- \\(n\\): neutral number density
-- \\(\sigma\\): effective collision cross section
-- \\(v\\): particle speed
+- $n$: neutral number density
+- $\sigma$: effective collision cross section
+- $v$: particle speed
 
 Algorithmically:
 
-1. Draw uniform random \\(u\sim U(0,1)\\).
-2. If \\(u < P_{coll}\\), register a collision event.
+1. Draw uniform random $u\sim U(0,1)$.
+2. If $u < P_{coll}$, register a collision event.
 3. Optionally test impact energy against ionization threshold to mark emissive events.
 
 This is the core probability logic shown in your MCC slide.
 
-## 4) Runge–Kutta Adaptive 4/5 (RK45) — Brief Integration Note
+### 4) Runge–Kutta Adaptive 4/5 (RK45) — Brief Integration Note
 
 Your slides discuss a Runge–Kutta formulation; in general, **adaptive RK45** for Lorentz dynamics works as follows:
 
@@ -214,7 +214,7 @@ In this codebase, trajectory pushing is currently done with a **Boris pusher** i
 
 ---
 
-## Repository Layout
+## 🟨 Repository Layout
 
 ```text
 0_info/      reference docs/manuals/slides
@@ -231,7 +231,7 @@ Key files:
 
 ---
 
-## Notes
+## 🟨 Notes
 
 - Units are SI unless otherwise stated.
 - For high particle counts, use Numba-enabled paths where available.
