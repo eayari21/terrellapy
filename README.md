@@ -237,3 +237,32 @@ Key files:
 - For high particle counts, use Numba-enabled paths where available.
 - If you run on Linux/headless systems, you may need to switch Matplotlib backend from `MacOSX` to `Agg` or `Qt5Agg`.
 
+
+
+## 🟨 Estimated Planeterrella Apparatus Parts List (2026 USD)
+
+> Prices are approximate **2026 USD quote-level estimates**, especially for custom-machined parts.
+
+| # | Part | Qty. | Unit cost | Est. total | Notes |
+|---:|---|---:|---:|---:|---|
+| 1 | Pyrex bell jar package, approximately 18 in OD × 24 in tall, with guard and Buna gasket | 1 | $5,675.00 | $5,675.00 | Closest catalog match to the referenced 40.64 cm OD × 63.5 cm tall chamber. |
+| 2 | Custom aluminum baseplate, approximately 1.9 cm thick, machined with feedthrough and mounting holes | 1 | $1,500.00 | $1,500.00 | Custom fabrication estimate. |
+| 3 | Custom hollow aluminum sphere, two threaded hemispheres, 2.54 cm outside radius, 0.5 cm wall thickness | 1 | $500.00 | $500.00 | Custom fabrication estimate. |
+| 4 | Cylindrical neodymium magnet, strong axial magnet, approximately 0.5 T surface-field class | 1 | $106.60 | $106.60 | Representative strong N52 cylindrical magnet. |
+| 5 | Insulating plastic support tube for sphere and internal HV wire routing | 1 | $25.00 | $25.00 | Delrin, PTFE, or similar insulating tube. |
+| 6 | Brass adapter/coupler for two-piece support tube | 1 | $25.00 | $25.00 | Custom or catalog tube coupling estimate. |
+| 7 | 1/4-20 mounting bolts and small hardware set | 1 | $10.00 | $10.00 | Six bolts plus washers/nuts. |
+| 8 | Linear/rotary vacuum-compatible magnet adjustment feedthrough | 1 | $5,680.00 | $5,680.00 | Representative commercial linear/rotary feedthrough. |
+| 9 | Positive-polarity 2 kV high-voltage power supply/generator | 1 | $799.00 | $799.00 | Used lab-grade supply estimate. |
+| 10 | Negative-polarity 2 kV high-voltage power supply/generator | 1 | $799.00 | $799.00 | Used lab-grade supply estimate. |
+| 11 | 25 kV electrical feedthrough for sphere bias connection | 1 | $343.00 | $343.00 | Representative single-conductor HV feedthrough. |
+| 12 | 500 kΩ high-voltage/current-limiting resistor | 1 | $4.29 | $4.29 | Representative 500 kΩ HV resistor; use proper voltage and power derating. |
+| 13 | High-voltage wire, terminals, grounding leads, and banana/SHV-style connections | 1 | $150.00 | $150.00 | Wiring allowance. |
+| 14 | Thermocouple pressure gauge/controller or pressure reader | 1 | $919.00 | $919.00 | Complete portable gauge/controller estimate. |
+| 15 | Manual all-metal leak valve for bleeding air/gas into chamber | 1 | $1,895.00 | $1,895.00 | Fine pressure control. |
+| 16 | Manual vent/shutoff valve | 1 | $226.25 | $226.25 | Representative KF/QF manual valve. |
+| 17 | Two-stage rotary vane mechanical vacuum pump | 1 | $4,596.80 | $4,596.80 | Representative Edwards RV5-class pump. |
+| 18 | Vacuum tubing, KF fittings, clamps, centering rings, and hose adapters | 1 | $500.00 | $500.00 | Plumbing allowance. |
+| 19 | Aluminum extrusion frame, shelf, brackets, and mounting hardware | 1 | $400.00 | $400.00 | Support frame allowance. |
+| 20 | Cleaning supplies, ethanol, acetone, wipes, vacuum grease, and miscellaneous assembly consumables | 1 | $50.00 | $50.00 | Assembly and leak-check consumables. |
+|  | **Estimated total** |  |  | **$24,178.94** |  |
